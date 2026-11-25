@@ -59,8 +59,9 @@ body {
   line-height: 1.2; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tab-wrap { display: flex; margin-top: 4px; }
+.app[data-inst="gtr"] { --row: 24px; }
 .labels {
-  display: grid; grid-template-rows: repeat(4, var(--row)) 16px;
+  display: grid; grid-template-rows: repeat(var(--n, 4), var(--row)) 16px;
   font-weight: 700; font-size: 14px; padding-right: 6px; margin-right: 2px;
   border-right: 3px double var(--ink);
 }
@@ -72,7 +73,7 @@ body {
 .tab::-webkit-scrollbar { display: none; }
 .col {
   flex: 0 0 34px;
-  display: grid; grid-template-rows: repeat(4, var(--row)) 16px;
+  display: grid; grid-template-rows: repeat(var(--n, 4), var(--row)) 16px;
   cursor: pointer; border-radius: 6px;
   --cbg: var(--lcd);
   background: var(--cbg);
@@ -122,6 +123,29 @@ body {
 .k-dur.on { background: #e5e5ea !important; color: #000 !important; }
 .k-op.on { background: #fff !important; color: var(--key-op) !important; }
 .wide { grid-column: span 2; }
+.strs {
+  grid-column: span 4;
+  display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 6px;
+}
+.app[data-inst="gtr"] .strs button { border-radius: 14px; font-size: clamp(16px, 4.6vw, 24px); }
+.app[data-inst="gtr"] .strs .cap { font-size: 9px; }
+.inst { min-width: 4.8em; }
+
+/* ---------- settings ---------- */
+.field { display: block; font-size: 13px; color: #aaa; margin: 12px 0 6px; }
+.field select { display: block; width: 100%; margin-top: 4px; }
+dialog select {
+  background: #2c2c2e; color: #fff; border: 1px solid #48484a; border-radius: 8px;
+  padding: 6px 8px; font-size: 15px;
+}
+.tune-rows { display: grid; gap: 6px; }
+.trow { display: grid; grid-template-columns: 3em 40px 1fr 40px; gap: 6px; align-items: center; }
+.trow .sname { font-size: 14px; color: #ddd; }
+.trow select { text-align: center; font-family: ui-monospace, Consolas, monospace; }
+dialog .trow button {
+  float: none; padding: 6px 0; background: #3a3a3c; font-size: 18px;
+}
+dialog form { margin-top: 14px; overflow: hidden; }
 
 /* ---------- help ---------- */
 dialog {

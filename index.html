@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ウクレレTAB">
-<title>ウクレレTAB電卓</title>
+<meta name="apple-mobile-web-app-title" content="TAB電卓">
+<title>TAB電卓</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -19,7 +19,8 @@
   <header class="bar">
     <input id="title" aria-label="曲名" placeholder="曲名" maxlength="40">
     <label class="tempo">♩=<input id="tempo" type="number" inputmode="numeric" min="30" max="300" aria-label="テンポ"></label>
-    <button id="lowg" class="toggle" type="button" title="4弦をLow-G(G3)にする">Low-G</button>
+    <button id="inst" class="toggle inst" type="button" title="ウクレレ／ギター切替">ウクレレ</button>
+    <button id="settings" class="toggle" type="button" aria-label="チューニング設定" title="チューニング・音色">⚙</button>
     <button id="help" class="toggle" type="button" aria-label="使い方">?</button>
   </header>
 
@@ -30,16 +31,13 @@
     </div>
     <div class="readout" id="readout"></div>
     <div class="tab-wrap">
-      <div class="labels"><span>A</span><span>E</span><span>C</span><span>G</span><span></span></div>
+      <div class="labels" id="labels"></div>
       <div class="tab" id="tab"></div>
     </div>
   </section>
 
   <section class="keys" id="keys">
-    <button data-k="s0" class="k-str">A<span class="cap">1弦</span></button>
-    <button data-k="s1" class="k-str">E<span class="cap">2弦</span></button>
-    <button data-k="s2" class="k-str">C<span class="cap">3弦</span></button>
-    <button data-k="s3" class="k-str">G<span class="cap">4弦</span></button>
+    <div class="strs" id="strs"></div>
     <button data-k="ac" class="k-ac">AC<span class="cap">全消去</span></button>
 
     <button data-k="d1" class="k-dur">1<span class="cap">全音符</span></button>
@@ -76,13 +74,27 @@
 <dialog id="helpDlg">
   <h2>使い方</h2>
   <ol>
-    <li><b>A / E / C / G</b> で弦を選び、<b>数字</b>でフレットを入力（2桁は続けて押す：1→2 で 12）。</li>
+    <li>右上のボタンで<b>ウクレレ／ギター</b>を切替（譜面は楽器ごとに別々に保存）。<b>⚙</b> で弦ごとのチューニングと音色を設定。</li>
+    <li><b>弦キー</b>（上から1弦）で弦を選び、<b>数字</b>でフレットを入力（2桁は続けて押す：1→2 で 12）。</li>
     <li>同じ列で別の弦を選んで数字を押すと<b>和音</b>になります。</li>
     <li><b>↵</b> で次の音（列）へ。<b>◀ ▶</b> で移動、TABをタップしても選べます。</li>
     <li><b>1〜1/16</b> で音価、<b>・</b> で付点、<b>休</b> で休符。</li>
     <li><b>♪</b> で試聴、<b>=</b> でMIDIファイルを保存。</li>
   </ol>
   <p class="kbd">キーボード: 数字 / ←→ 移動 / ↑↓ 弦 / Enter 次 / Backspace 列削除 / Space 再生 / R 休符 / . 付点</p>
+  <form method="dialog"><button>閉じる</button></form>
+</dialog>
+
+<dialog id="setDlg">
+  <h2 id="setTitle">設定</h2>
+  <label class="field">プリセット
+    <select id="preset"></select>
+  </label>
+  <div class="field">弦ごとのチューニング（上が1弦）</div>
+  <div id="tuneRows" class="tune-rows"></div>
+  <label class="field">MIDI音色
+    <select id="program"></select>
+  </label>
   <form method="dialog"><button>閉じる</button></form>
 </dialog>
 

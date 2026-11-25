@@ -1,4 +1,4 @@
-const CACHE = 'uke-tab-midi-v1';
+const CACHE = 'uke-tab-midi-v2';
 const ASSETS = [
   './',
   'index.html',

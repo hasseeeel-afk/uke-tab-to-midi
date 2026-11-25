@@ -1,7 +1,7 @@
 {
-  "name": "ウクレレTAB電卓 — TAB譜からMIDI",
-  "short_name": "ウクレレTAB",
-  "description": "電卓感覚でウクレレのTAB譜を入力し、MIDIファイルを書き出すアプリ",
+  "name": "TAB電卓 — ウクレレ/ギターTAB譜からMIDI",
+  "short_name": "TAB電卓",
+  "description": "電卓感覚でウクレレ・ギターのTAB譜を入力し、MIDIファイルを書き出すアプリ",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",
