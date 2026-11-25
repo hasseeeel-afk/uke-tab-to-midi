@@ -46,6 +46,19 @@ const el = {
   playKey: $('playKey'), help: $('help'), helpDlg: $('helpDlg'),
 };
 
+/* HTML と JS の版が食い違っていたら（古いキャッシュ混在）キャッシュを消して1回だけ再読込 */
+if (Object.values(el).some((x) => !x)) {
+  let tried = false;
+  try { tried = sessionStorage.getItem('tab-calc:healed') === '1'; sessionStorage.setItem('tab-calc:healed', '1'); } catch (_) { /* ignore */ }
+  if (!tried) {
+    Promise.all([
+      navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then((rs) => Promise.all(rs.map((r) => r.unregister()))) : 0,
+      window.caches ? caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))) : 0,
+    ]).finally(() => location.reload());
+  }
+  throw new Error('HTML/JS version mismatch');
+}
+
 /* ===== 状態 =====
  * S = { inst: 'uke'|'gtr', songs: { uke: Song, gtr: Song } }  楽器ごとに別の譜面を保持
  */

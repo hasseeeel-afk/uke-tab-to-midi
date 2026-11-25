@@ -1,9 +1,11 @@
-const CACHE = 'uke-tab-midi-v2';
+// 更新時は VERSION と index.html の ?v= を同じ値に上げる
+const VERSION = '3';
+const CACHE = 'tab-calc-v' + VERSION;
 const ASSETS = [
   './',
   'index.html',
-  'style.css',
-  'app.js',
+  `style.css?v=${VERSION}`,
+  `app.js?v=${VERSION}`,
   'manifest.webmanifest',
   'icons/icon.svg',
   'icons/icon-192.png',
@@ -11,7 +13,12 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' で HTTP キャッシュを通さず必ずサーバーから取得（新旧ファイルの混在を防ぐ）
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -22,16 +29,20 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// stale-while-revalidate: オフラインでも即起動し、オンライン時は裏で更新
+// network-first: オンラインなら常に最新、オフライン時のみキャッシュ
 self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const hit = await cache.match(e.request, { ignoreSearch: true });
-      const net = fetch(e.request)
-        .then((res) => { if (res.ok) cache.put(e.request, res.clone()); return res; })
-        .catch(() => hit);
-      return hit || net;
-    })
-  );
+  const req = e.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    try {
+      const res = await fetch(req, { cache: 'no-cache' });
+      if (res.ok) cache.put(req, res.clone());
+      return res;
+    } catch (_) {
+      return (await cache.match(req)) ||
+        (req.mode === 'navigate' ? await cache.match('index.html') : undefined) ||
+        Response.error();
+    }
+  })());
 });
