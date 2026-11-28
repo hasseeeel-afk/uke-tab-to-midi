@@ -453,8 +453,11 @@ function thump(m, t) {
 function thumpNow(m) { const a = audio(); thump(m, a.currentTime + 0.01); }
 
 function play() {
-  const steps = trimmed();
-  if (!steps.length) return;
+  const all = trimmed();
+  if (!all.length) return;
+  // カーソル位置の列から再生。カーソルが末尾の空き列（音符の後ろ）にあるときは先頭から
+  const start = D().cur < all.length ? D().cur : 0;
+  const steps = all.slice(start);
   const a = audio();
   const spb = 60 / D().tempo;
   const t0 = a.currentTime + 0.08;
@@ -475,7 +478,7 @@ function play() {
     const now = a.currentTime;
     if (now >= tEnd) { stop(); return; }
     let idx = -1;
-    for (let i = 0; i < times.length; i++) if (now >= times[i]) idx = i;
+    for (let i = 0; i < times.length; i++) if (now >= times[i]) idx = start + i;
     if (idx !== player.last) {
       const cols = el.tab.children;
       if (cols[player.last]) cols[player.last].classList.remove('playing');
