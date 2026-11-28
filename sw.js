@@ -1,5 +1,5 @@
 // 更新時は VERSION と index.html の ?v= を同じ値に上げる
-const VERSION = '10';
+const VERSION = '11';
 const CACHE = 'tab-calc-v' + VERSION;
 const ASSETS = [
   './',
