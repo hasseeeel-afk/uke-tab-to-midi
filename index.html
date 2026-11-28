@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#cdc5b4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div class="app">
@@ -24,6 +24,12 @@
     <button id="help" class="toggle" type="button" aria-label="使い方">?</button>
   </header>
 
+  <div class="bezel">
+  <div class="plate" aria-hidden="true">
+    <span class="logo">TAB-26</span>
+    <span class="sub">DIGITAL TAB SAMPLER</span>
+    <span class="stripe"><i></i><i></i><i></i></span>
+  </div>
   <section class="lcd" aria-live="polite">
     <div class="status">
       <span id="info"></span>
@@ -35,39 +41,51 @@
       <div class="tab" id="tab"></div>
     </div>
   </section>
+  </div>
 
   <section class="keys" id="keys">
-    <div class="strs" id="strs"></div>
-    <button data-k="ac" class="k-ac">AC<span class="cap">全消去</span></button>
+    <!-- 1段目（3等分） -->
+    <div class="krow">
+      <button data-k="ac" class="k-ac">AC<span class="cap">全削除</span></button>
+      <button data-k="play" class="k-play" id="playKey">♪<span class="cap">再生</span></button>
+      <button data-k="midi" class="k-eq">=<span class="cap">MIDI保存</span></button>
+    </div>
 
-    <button data-k="d1" class="k-dur">1<span class="cap">全音符</span></button>
-    <button data-k="d2" class="k-dur">½<span class="cap">2分</span></button>
-    <button data-k="d4" class="k-dur">¼<span class="cap">4分</span></button>
-    <button data-k="d8" class="k-dur">⅛<span class="cap">8分</span></button>
-    <button data-k="d16" class="k-dur">1/16<span class="cap">16分</span></button>
+    <!-- 2段目（4等分） -->
+    <div class="krow">
+      <button data-k="left" class="k-op" aria-label="前の列">←<span class="cap">前の列</span></button>
+      <button data-k="up" class="k-op" aria-label="上の弦">↑<span class="cap">上の弦</span></button>
+      <button data-k="down" class="k-op" aria-label="下の弦">↓<span class="cap">下の弦</span></button>
+      <button data-k="right" class="k-op" aria-label="次の列">→<span class="cap">次の列</span></button>
+    </div>
 
-    <button data-k="7">7</button>
-    <button data-k="8">8</button>
-    <button data-k="9">9</button>
-    <button data-k="dot" class="k-fn">・<span class="cap">付点</span></button>
+    <!-- 3段目 -->
     <button data-k="del" class="k-fn">⌫<span class="cap">列削除</span></button>
-
-    <button data-k="4">4</button>
-    <button data-k="5">5</button>
-    <button data-k="6">6</button>
-    <button data-k="rest" class="k-fn">休<span class="cap">休符</span></button>
-    <button data-k="left" class="k-op">◀<span class="cap">前へ</span></button>
-
+    <button data-k="ins" class="k-fn">⊕<span class="cap">列挿入</span></button>
+    <button data-k="0">0</button>
     <button data-k="1">1</button>
     <button data-k="2">2</button>
-    <button data-k="3">3</button>
-    <button data-k="x" class="k-fn">×<span class="cap">弦クリア</span></button>
-    <button data-k="right" class="k-op">▶<span class="cap">後へ</span></button>
 
-    <button data-k="0" class="wide">0</button>
-    <button data-k="play" class="k-op" id="playKey">♪<span class="cap">再生</span></button>
-    <button data-k="next" class="k-op">↵<span class="cap">次の音</span></button>
-    <button data-k="midi" class="k-eq">=<span class="cap">MIDI保存</span></button>
+    <!-- 4段目 -->
+    <button data-k="d1" class="k-dur">1<span class="cap">全音符</span></button>
+    <button data-k="d2" class="k-dur">½<span class="cap">2分</span></button>
+    <button data-k="3">3</button>
+    <button data-k="4">4</button>
+    <button data-k="5">5</button>
+
+    <!-- 5段目 -->
+    <button data-k="d4" class="k-dur">¼<span class="cap">4分</span></button>
+    <button data-k="d8" class="k-dur">⅛<span class="cap">8分</span></button>
+    <button data-k="6">6</button>
+    <button data-k="7">7</button>
+    <button data-k="8">8</button>
+
+    <!-- 6段目 -->
+    <button data-k="d16" class="k-dur">1/16<span class="cap">16分</span></button>
+    <button data-k="dot" class="k-dur">・<span class="cap">付点</span></button>
+    <button data-k="9">9</button>
+    <button data-k="mute" class="k-fn">✕<span class="cap">ミュート</span></button>
+    <button data-k="x" class="k-fn">⌀<span class="cap">弦クリア</span></button>
   </section>
 </div>
 
@@ -75,14 +93,16 @@
   <h2>使い方</h2>
   <ol>
     <li>右上のボタンで<b>ウクレレ／ギター</b>を切替（譜面は楽器ごとに別々に保存）。<b>⚙</b> で弦ごとのチューニングと音色を設定。</li>
-    <li><b>弦キー</b>（上から1弦）で弦を選び、<b>数字</b>でフレットを入力（2桁は続けて押す：1→2 で 12）。</li>
+    <li><b>↑ ↓</b> で弦を選び（TABや左の弦名をタップしても選べます）、<b>数字</b>でフレットを入力（2桁は続けて押す：1→2 で 12）。</li>
     <li>同じ列で別の弦を選んで数字を押すと<b>和音</b>になります。</li>
-    <li><b>↵</b> で次の音（列）へ。<b>◀ ▶</b> で移動、TABをタップしても選べます。</li>
-    <li><b>1〜1/16</b> で音価、<b>・</b> で付点、<b>休</b> で休符。</li>
+    <li><b>→</b> で次の列へ（最後の列なら新しい列を追加）。<b>列挿入</b>で今の列の後ろに空の列を追加。何も入っていない列は<b>休符</b>になります。</li>
+    <li><b>ミュート</b>でその弦をブラッシング音（✕）に。もう一度押すと解除。<b>弦クリア</b>でその弦の入力を消去。</li>
+    <li><b>全〜16分</b> で音価、<b>付点</b> で付点音符。</li>
     <li><b>♪</b> で試聴、<b>=</b> でMIDIファイルを保存。</li>
+    <li><b>AC</b> を押すと点滅します。3秒以内にもう一度押すと全削除（他のキーで取り消し）。</li>
   </ol>
-  <p class="kbd">キーボード: 数字 / ←→ 移動 / ↑↓ 弦 / Enter 次 / Backspace 列削除 / Space 再生 / R 休符 / . 付点</p>
-  <p class="kbd">バージョン 3</p>
+  <p class="kbd">キーボード: 数字 / ←→ 列移動 / ↑↓ 弦 / Enter 列挿入 / Backspace 列削除 / Delete 弦クリア / X ミュート / Space 再生 / . 付点</p>
+  <p class="kbd">バージョン 9</p>
   <form method="dialog"><button>閉じる</button></form>
 </dialog>
 
@@ -99,6 +119,6 @@
   <form method="dialog"><button>閉じる</button></form>
 </dialog>
 
-<script src="app.js?v=3"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

@@ -31,7 +31,34 @@ const PROGRAMS = [
 ];
 const TUNE_MIN = 28, TUNE_MAX = 84;   // E1 〜 C6
 const NOTE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const DUR_LABEL = { 1: '1', 2: '½', 4: '¼', 8: '⅛', 16: '1/16' };
+const DUR_NAME = { 1: '全音符', 2: '2分音符', 4: '4分音符', 8: '8分音符', 16: '16分音符' };
+const REST_NAME = { 1: '全休符', 2: '2分休符', 4: '4分休符', 8: '8分休符', 16: '16分休符' };
+
+/* 音符・休符アイコン（SVG で描画：Android でも記号フォントに依存せず表示できる） */
+function durIcon(d, dot, rest) {
+  const S = 'stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"';
+  let g = '';
+  if (!rest) {
+    const hollow = d <= 2;
+    const head = d === 1
+      ? `<ellipse cx="9" cy="16" rx="4.6" ry="3.1" ${S} stroke-width="1.6"/>`
+      : `<ellipse cx="8" cy="17" rx="4" ry="2.8" transform="rotate(-22 8 17)" ${hollow ? `${S} stroke-width="1.5"` : 'fill="currentColor"'}/>`;
+    g += head;
+    if (d >= 2) g += `<line x1="11.6" y1="16" x2="11.6" y2="2.5" ${S}/>`;
+    if (d >= 8) g += `<path d="M11.6 2.5 C12.4 6 16.6 6.6 15.2 11" ${S}/>`;
+    if (d >= 16) g += `<path d="M11.6 6.5 C12.4 10 16.6 10.6 15.2 15" ${S}/>`;
+    if (dot) g += `<circle cx="17.3" cy="17.5" r="1.4" fill="currentColor"/>`;
+  } else {
+    if (d === 1) g += `<line x1="3" y1="8" x2="16" y2="8" ${S}/><rect x="5.5" y="8" width="8" height="3.6" fill="currentColor"/>`;
+    if (d === 2) g += `<line x1="3" y1="13" x2="16" y2="13" ${S}/><rect x="5.5" y="9.4" width="8" height="3.6" fill="currentColor"/>`;
+    if (d === 4) g += `<path d="M7.5 3.5 L11.5 8 L8.5 11.5 L12 15.5 C8.8 14.2 8 16.8 10.2 19.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if (d === 8) g += `<circle cx="7.6" cy="8" r="1.8" fill="currentColor"/><path d="M8 9.6 Q11 9.8 13 6.8 L9.6 19" ${S}/>`;
+    if (d === 16) g += `<circle cx="8.4" cy="5.6" r="1.7" fill="currentColor"/><circle cx="6.9" cy="10.6" r="1.7" fill="currentColor"/>`
+      + `<path d="M8.8 7.1 Q11.6 7.3 13.4 4.4 L9.2 19.5 M7.3 12.1 Q10.2 12.3 12.1 9.4" ${S}/>`;
+    if (dot) g += `<circle cx="17" cy="9" r="1.4" fill="currentColor"/>`;
+  }
+  return `<svg viewBox="0 0 20 22" width="20" height="22" aria-hidden="true">${g}</svg>`;
+}
 const PPQ = 480;
 const STORE_KEY = 'tab-calc:v2';
 const OLD_STORE_KEY = 'ukulele-tab-midi:v1';
@@ -40,7 +67,7 @@ const $ = (id) => document.getElementById(id);
 const el = {
   app: document.querySelector('.app'),
   tab: $('tab'), labels: $('labels'), info: $('info'), pos: $('pos'), readout: $('readout'),
-  keys: $('keys'), strs: $('strs'), title: $('title'), tempo: $('tempo'),
+  keys: $('keys'), title: $('title'), tempo: $('tempo'),
   inst: $('inst'), settings: $('settings'), setDlg: $('setDlg'), setTitle: $('setTitle'),
   preset: $('preset'), tuneRows: $('tuneRows'), program: $('program'),
   playKey: $('playKey'), help: $('help'), helpDlg: $('helpDlg'),
@@ -112,15 +139,39 @@ const D = () => S.songs[S.inst];
 const I = () => INSTRUMENTS[S.inst];
 const nStr = () => D().tuning.length;
 const cur = () => D().steps[D().cur];
-const midiOf = (si, fret) => D().tuning[si] + fret;
+/* セルの値: null=空 / 数値=フレット / 'x'=ミュート（ブラッシング） */
+const MUTE = 'x';
+const isMute = (v) => v === MUTE;
+const midiOf = (si, fret) => D().tuning[si] + (isMute(fret) ? 0 : fret);
 const noteName = (m) => NOTE[m % 12] + (Math.floor(m / 12) - 1);
 const pc = (m) => NOTE[m % 12];
 const beatsOf = (st) => (4 / st.d) * (st.dot ? 1.5 : 1);
 const isRest = (st) => st.f.every((x) => x == null);
-const notesOf = (st) => [...new Set(st.f.map((fr, i) => (fr == null ? null : midiOf(i, fr))).filter((x) => x != null))].sort((a, b) => a - b);
+const uniqSorted = (arr) => [...new Set(arr)].sort((a, b) => a - b);
+/* 実音（ミュート以外）の MIDI ノート */
+const notesOf = (st) => uniqSorted(st.f.flatMap((fr, i) => (typeof fr === 'number' ? [midiOf(i, fr)] : [])));
+/* ミュート弦の MIDI ノート（開放弦の音程で短く鳴らす） */
+const mutesOf = (st) => uniqSorted(st.f.flatMap((fr, i) => (isMute(fr) ? [midiOf(i, 0)] : [])));
 
 /* ===== 入力 ===== */
+/* 全削除は「2回押し」で確定（confirm() は PWA/Android/埋め込みブラウザで抑止されることがあるため使わない） */
+const AC_WINDOW_MS = 3000;
+let acTimer = 0;
+const acKey = () => el.keys.querySelector('[data-k="ac"]');
+function armAc() {
+  acTimer = setTimeout(() => { disarmAc(); render(); }, AC_WINDOW_MS);
+  acKey().classList.add('armed');
+  el.readout.textContent = 'もう一度ACで全削除';
+}
+function disarmAc() {
+  if (!acTimer) return;
+  clearTimeout(acTimer);
+  acTimer = 0;
+  acKey().classList.remove('armed');
+}
+
 function press(k) {
+  if (k !== 'ac') disarmAc();
   if (/^\d$/.test(k)) { digit(+k); return; }
   const d = D();
 
@@ -139,13 +190,16 @@ function press(k) {
     case 'd1': case 'd2': case 'd4': case 'd8': case 'd16':
       d.dur = cur().d = +k.slice(1); break;
     case 'dot': cur().dot = !cur().dot; break;
-    case 'rest': cur().f = Array(nStr()).fill(null); break;
+    case 'mute':
+      cur().f[d.str] = isMute(cur().f[d.str]) ? null : MUTE;
+      if (isMute(cur().f[d.str]) && !player) thumpNow(midiOf(d.str, 0));
+      break;
     case 'x': cur().f[d.str] = null; break;
     case 'left': if (d.cur > 0) d.cur--; break;
     case 'right':
       if (d.cur === d.steps.length - 1) d.steps.push(newStep(nStr(), d.dur));
       d.cur++; break;
-    case 'next':
+    case 'ins':
       d.steps.splice(d.cur + 1, 0, newStep(nStr(), d.dur));
       d.cur++; break;
     case 'del':
@@ -157,7 +211,8 @@ function press(k) {
       }
       break;
     case 'ac':
-      if (!confirm(`${I().label}のTABをすべて消去しますか？`)) return;
+      if (!acTimer) { armAc(); return; }
+      disarmAc();
       stop();
       d.steps = [newStep(nStr(), d.dur)];
       d.cur = 0;
@@ -180,7 +235,7 @@ function digit(n) {
   commit();
 }
 
-function commit() { save(); render(); }
+function commit() { disarmAc(); save(); render(); }
 
 /* ===== 描画 ===== */
 function render() {
@@ -189,17 +244,12 @@ function render() {
   el.app.style.setProperty('--n', n);
   el.app.dataset.inst = S.inst;
 
-  // 弦キー & 弦ラベル
-  el.strs.replaceChildren(...d.tuning.map((m, i) => {
-    const b = document.createElement('button');
-    b.className = 'k-str' + (i === d.str ? ' on' : '');
-    b.dataset.k = 's' + i;
-    b.innerHTML = `${pc(m)}<span class="cap">${i + 1}弦</span>`;
-    return b;
-  }));
-  el.labels.replaceChildren(...d.tuning.map((m) => {
+  // 弦ラベル（選択中の弦を反転表示、タップで弦選択）
+  el.labels.replaceChildren(...d.tuning.map((m, i) => {
     const s = document.createElement('span');
     s.textContent = pc(m);
+    s.dataset.s = i;
+    if (i === d.str) s.className = 'on';
     return s;
   }), document.createElement('span'));
 
@@ -219,13 +269,17 @@ function render() {
       c.dataset.s = s;
       const fr = st.f[s];
       if (fr == null) c.classList.add('empty');
+      else if (isMute(fr)) c.innerHTML = '<b class="mute">x</b>';
       else c.innerHTML = `<b>${fr}</b>`;
       if (i === d.cur && s === d.str) c.classList.add('sel');
       col.appendChild(c);
     }
     const dl = document.createElement('div');
     dl.className = 'dur';
-    dl.textContent = DUR_LABEL[st.d] + (st.dot ? '.' : '') + (isRest(st) ? '休' : '');
+    const rest = isRest(st);
+    dl.innerHTML = durIcon(st.d, st.dot, rest);
+    dl.title = (st.dot ? '付点' : '') + (rest ? REST_NAME : DUR_NAME)[st.d];
+    if (rest) dl.classList.add('rest');
     col.appendChild(dl);
     frag.appendChild(col);
   });
@@ -242,13 +296,15 @@ function render() {
   const st = cur();
   const fr = st.f[d.str];
   const strLabel = `${d.str + 1}弦`;
-  if (fr != null) {
-    const chord = notesOf(st);
-    el.readout.textContent = chord.length > 1
-      ? chord.map(noteName).join(' ')
+  const chordText = () => [...notesOf(st).map(noteName), ...(mutesOf(st).length ? ['x'.repeat(mutesOf(st).length)] : [])].join(' ');
+  if (isMute(fr)) {
+    el.readout.textContent = `${strLabel} ミュート x`;
+  } else if (fr != null) {
+    el.readout.textContent = notesOf(st).length > 1 || mutesOf(st).length
+      ? chordText()
       : `${strLabel} ${fr}f → ${noteName(midiOf(d.str, fr))}`;
   } else if (!isRest(st)) {
-    el.readout.textContent = notesOf(st).map(noteName).join(' ');
+    el.readout.textContent = chordText();
   } else {
     el.readout.textContent = `${strLabel}(${noteName(d.tuning[d.str])}) _`;
   }
@@ -368,6 +424,34 @@ function pluck(m, t, dur) {
 }
 function pluckNow(m, dur) { const a = audio(); pluck(m, a.currentTime + 0.01, dur); }
 
+/* ミュート音: 短いノイズ＋かすかな音程の「チャッ」 */
+let noiseBuf = null;
+function thump(m, t) {
+  const a = audio();
+  if (!noiseBuf) {
+    noiseBuf = a.createBuffer(1, Math.floor(a.sampleRate * 0.08), a.sampleRate);
+    const ch = noiseBuf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  }
+  const f = 440 * Math.pow(2, (m - 69) / 12);
+  const n = a.createBufferSource(); n.buffer = noiseBuf;
+  const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = Math.min(f * 6, 6000); bp.Q.value = 0.8;
+  const g = a.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.35, t + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+  const o = a.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+  const og = a.createGain();
+  og.gain.setValueAtTime(0.0001, t);
+  og.gain.exponentialRampToValueAtTime(0.12, t + 0.003);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  n.connect(bp).connect(g).connect(a.destination);
+  o.connect(og).connect(a.destination);
+  n.start(t); n.stop(t + 0.08); o.start(t); o.stop(t + 0.08);
+  voices.push(n, o);
+}
+function thumpNow(m) { const a = audio(); thump(m, a.currentTime + 0.01); }
+
 function play() {
   const steps = trimmed();
   if (!steps.length) return;
@@ -380,6 +464,7 @@ function play() {
     const len = beatsOf(st) * spb;
     times.push(t);
     notesOf(st).forEach((m) => pluck(m, t, len));
+    mutesOf(st).forEach((m) => thump(m, t));
     t += len;
   });
   const tEnd = t;
@@ -441,16 +526,27 @@ function buildMidi() {
   push(0, 0xff, 0x58, 0x04, 4, 2, 24, 8);
   push(0, 0xc0, d.program & 0x7f);
 
-  let pending = 0;
+  // 絶対時刻でノートを集め、時刻順（同時刻は Note Off 優先）に並べてから書き出す
+  const MUTE_TICKS = PPQ / 8;          // ミュート音は 32分音符の長さ
+  const notes = [];                    // { on, off, n, vel }
+  let t = 0;
   for (const st of steps) {
     const len = Math.round(PPQ * beatsOf(st));
-    const notes = notesOf(st).filter((m) => m >= 0 && m <= 127);
-    if (!notes.length) { pending += len; continue; }
-    notes.forEach((n, i) => push(i ? 0 : pending, 0x90, n, 96));
-    notes.forEach((n, i) => push(i ? 0 : len, 0x80, n, 64));
-    pending = 0;
+    const played = notesOf(st);
+    played.forEach((n) => notes.push({ on: t, off: t + len, n, vel: 96 }));
+    mutesOf(st).filter((n) => !played.includes(n))
+      .forEach((n) => notes.push({ on: t, off: t + Math.min(MUTE_TICKS, len), n, vel: 40 }));
+    t += len;
   }
-  push(pending, 0xff, 0x2f, 0x00);
+  const ev2 = [];
+  notes.filter((x) => x.n >= 0 && x.n <= 127).forEach((x) => {
+    ev2.push({ t: x.on, k: 1, b: [0x90, x.n, x.vel] });
+    ev2.push({ t: x.off, k: 0, b: [0x80, x.n, 64] });
+  });
+  ev2.sort((a, b) => a.t - b.t || a.k - b.k);
+  let last = 0;
+  for (const e of ev2) { push(e.t - last, ...e.b); last = e.t; }
+  push(t - last, 0xff, 0x2f, 0x00);
 
   const head = [0x4d, 0x54, 0x68, 0x64, ...u32(6), 0, 0, 0, 1, (PPQ >> 8) & 255, PPQ & 255];
   const trk = [0x4d, 0x54, 0x72, 0x6b, ...u32(ev.length)];
@@ -495,6 +591,14 @@ el.tab.addEventListener('click', (e) => {
   commit();
 });
 
+el.labels.addEventListener('click', (e) => {
+  const s = e.target.closest('[data-s]');
+  if (!s) return;
+  buf = '';
+  D().str = +s.dataset.s;
+  commit();
+});
+
 el.title.addEventListener('input', () => { D().title = el.title.value; save(); });
 el.tempo.addEventListener('change', () => {
   const v = Math.round(+el.tempo.value);
@@ -505,8 +609,8 @@ el.help.addEventListener('click', () => el.helpDlg.showModal());
 
 const KEYMAP = {
   ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down',
-  Enter: 'next', Backspace: 'del', Delete: 'x', ' ': 'play',
-  r: 'rest', R: 'rest', '.': 'dot', '=': 'midi',
+  Enter: 'ins', Backspace: 'del', Delete: 'x', ' ': 'play',
+  x: 'mute', X: 'mute', '.': 'dot', '=': 'midi',
 };
 document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, select, dialog') || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -516,6 +620,13 @@ document.addEventListener('keydown', (e) => {
   press(k);
   const btn = el.keys.querySelector(`[data-k="${k}"]`);
   if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 100); }
+});
+
+/* 音価キーの表示を音符アイコンに（TAB 表示と同じ描画を流用） */
+el.keys.querySelectorAll('.k-dur[data-k^="d"]').forEach((b) => {
+  const d = +b.dataset.k.slice(1);
+  b.innerHTML = `${durIcon(d, false, false)}<span class="cap">${DUR_NAME[d].replace('音符', '')}</span>`;
+  b.setAttribute('aria-label', DUR_NAME[d]);
 });
 
 render();

@@ -1,21 +1,42 @@
+/* =========================================================
+   TAB-26 — レトロ・サンプラー風テーマ
+   ベージュの樹脂筐体 / 黒ベゼルのバックライトLCD / ゴムパッド / LEDインジケータ
+   ========================================================= */
 :root {
-  --bg: #000;
-  --key: #333336;
-  --key-fn: #a5a5a5;
-  --key-op: #ff9f0a;
-  --key-eq: #30d158;
-  --key-ac: #ff453a;
-  --key-str: #24435f;
-  --key-str-on: #5ac8fa;
-  --lcd: #c7d4b4;
-  --lcd-cur: #b2c29b;
-  --lcd-play: #f1d27a;
-  --ink: #1b2812;
+  --desk: #26231f;
+  --body: #cdc5b4;          /* 筐体 */
+  --body-hi: #ddd6c6;
+  --body-lo: #b3aa97;
+  --print: #3b372f;         /* 筐体印刷文字 */
+  --bezel: #2b2926;
+
+  --pad: #55524c;           /* ゴムパッド（数字） */
+  --pad-hi: #6a665f;
+  --pad-lo: #3d3b37;
+  --cream: #ebe4d2;         /* 機能キー */
+  --cream-lo: #c9c0aa;
+  --gray: #8f897c;          /* カーソルキー */
+  --gray-lo: #6f6a5f;
+  --red: #c2462f;
+  --red-lo: #8f3020;
+  --green: #6b8f4e;
+  --green-lo: #4c6a35;
+  --mustard: #d9a03a;
+  --mustard-lo: #a8761f;
+  --led: #ff3d1f;
+
+  --lcd: #b9c76a;           /* 黄緑バックライト */
+  --lcd-cur: #a6b65a;
+  --lcd-play: #e3c862;
+  --ink: #1e2a0c;
   --row: 30px;
+
+  --mono: "OCR A Std", "Lucida Console", ui-monospace, Consolas, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", monospace;
+  --panel: "Arial Narrow", "Helvetica Neue", Arial, "Roboto Condensed", "Roboto", sans-serif;
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: #fff; }
+html, body { margin: 0; height: 100%; background: var(--body); color: var(--print); }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
@@ -25,48 +46,130 @@ body {
   touch-action: manipulation;
 }
 
+/* ---------- 筐体 ---------- */
 .app {
+  position: relative;
   height: 100vh; height: 100dvh;
   max-width: 520px; margin: 0 auto;
   display: flex; flex-direction: column; gap: 10px;
-  padding: calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 12px);
+  padding: calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 14px);
+  background:
+    /* 細かいシボ */
+    repeating-linear-gradient(0deg, rgba(0,0,0,.018) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--body-hi), var(--body) 30%, var(--body-lo));
+}
+/* 四隅のビス */
+.app::before, .app::after {
+  content: ""; position: absolute; top: calc(env(safe-area-inset-top) + 4px);
+  width: 9px; height: 9px; border-radius: 50%;
+  background:
+    linear-gradient(45deg, transparent 44%, rgba(0,0,0,.45) 45% 55%, transparent 56%),
+    radial-gradient(circle at 35% 35%, #eee9dd, #8d8676);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+  opacity: .8;
+}
+.app::before { left: 4px; }
+.app::after { right: 4px; }
+
+@media (min-width: 560px) {
+  html, body { background: var(--desk); }
+  .app {
+    height: calc(100dvh - 32px); margin: 16px auto;
+    border-radius: 14px;
+    box-shadow: 0 1px 0 var(--body-hi) inset, 0 20px 50px rgba(0,0,0,.6), 0 4px 0 var(--body-lo);
+  }
 }
 
-/* ---------- header ---------- */
-.bar { display: flex; gap: 8px; align-items: center; }
+/* ---------- ヘッダー（曲名テープ・テンポ窓） ---------- */
+.bar { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
 .bar input {
-  background: #1c1c1e; color: #fff; border: 1px solid #3a3a3c; border-radius: 10px;
-  padding: 8px 10px; font-size: 15px; min-width: 0;
+  background: #1d1c1a; color: #ffb347;
+  border: 0; border-radius: 3px;
+  box-shadow: inset 0 2px 3px rgba(0,0,0,.7), 0 1px 0 var(--body-hi);
+  padding: 7px 8px; font-size: 15px; min-width: 0;
+  font-family: var(--mono); letter-spacing: .04em;
+  text-shadow: 0 0 6px rgba(255,150,40,.5);
 }
 #title { flex: 1; }
-.tempo { display: flex; align-items: center; gap: 4px; font-size: 15px; color: #ccc; }
-#tempo { width: 64px; text-align: right; }
-.toggle {
-  background: #1c1c1e; color: #ccc; border: 1px solid #3a3a3c; border-radius: 10px;
-  padding: 8px 10px; font-size: 14px; cursor: pointer;
+.tempo {
+  display: flex; align-items: center; gap: 3px;
+  font: 700 12px var(--panel); color: var(--print); letter-spacing: .05em;
 }
-.toggle.on { background: var(--key-str-on); color: #000; border-color: var(--key-str-on); }
+/* 3桁（300まで）が必ず収まる幅。数値入力のスピンボタンは隠す */
+#tempo {
+  width: calc(3ch + 3 * .04em + 14px); min-width: 50px; flex: none;
+  padding-left: 6px; padding-right: 8px;
+  text-align: right;
+  -moz-appearance: textfield; appearance: textfield;
+}
+#tempo::-webkit-outer-spin-button, #tempo::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* ---------- LCD ---------- */
-.lcd {
-  background: var(--lcd); color: var(--ink);
-  border-radius: 16px; padding: 10px 12px 8px;
-  box-shadow: inset 0 3px 8px rgba(0,0,0,.35);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", "Noto Sans Mono", "Droid Sans Mono", monospace;
+/* 全削除キー: 1回目で点滅（もう一度押すと実行） */
+.keys .k-ac.armed { animation: armed .5s steps(1) infinite; }
+@keyframes armed { 50% { --face: #ff6a4d; filter: brightness(1.25); } }
+.toggle {
+  background: linear-gradient(var(--cream), #dcd3bd);
+  color: var(--print);
+  border: 0; border-radius: 4px;
+  box-shadow: 0 3px 0 var(--cream-lo), 0 4px 4px rgba(0,0,0,.25);
+  padding: 7px 9px; font: 700 13px var(--panel); cursor: pointer;
+  transform: translateY(-2px);
 }
-.status { display: flex; justify-content: space-between; font-size: 12px; opacity: .8; }
+.toggle:active { transform: translateY(0); box-shadow: 0 1px 0 var(--cream-lo); }
+.inst { min-width: 4.8em; }
+
+/* ---------- 銘板 + ベゼル + LCD ---------- */
+.bezel {
+  background: linear-gradient(180deg, #34322e, var(--bezel));
+  border-radius: 8px;
+  padding: 6px 10px 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 2px 0 var(--body-hi), 0 -1px 0 var(--body-lo);
+}
+.plate {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--panel); color: #d9d2c0; height: 18px; margin-bottom: 5px;
+}
+.plate .logo { font-weight: 900; font-style: italic; font-size: 14px; letter-spacing: .06em; }
+.plate .sub { font-size: 9px; letter-spacing: .22em; opacity: .75; flex: 1; white-space: nowrap; overflow: hidden; }
+.plate .stripe { display: flex; gap: 2px; }
+.plate .stripe i { width: 14px; height: 4px; border-radius: 1px; }
+.plate .stripe i:nth-child(1) { background: var(--red); }
+.plate .stripe i:nth-child(2) { background: var(--mustard); }
+.plate .stripe i:nth-child(3) { background: var(--green); }
+
+.lcd {
+  position: relative;
+  color: var(--ink);
+  border-radius: 3px; padding: 8px 10px 6px;
+  background:
+    radial-gradient(120% 90% at 50% 40%, rgba(255,255,220,.35), transparent 70%),
+    var(--lcd);
+  box-shadow: inset 0 0 0 2px #1a1916, inset 0 4px 10px rgba(0,0,0,.45), inset 0 0 24px rgba(60,80,0,.25);
+  font-family: var(--mono);
+}
+/* ドットマトリクス風の格子 */
+.lcd::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 3px;
+  background:
+    repeating-linear-gradient(0deg, rgba(30,42,12,.06) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(30,42,12,.05) 0 1px, transparent 1px 3px);
+}
+.status { display: flex; justify-content: space-between; font-size: 11px; opacity: .85; text-transform: uppercase; letter-spacing: .03em; }
 .readout {
-  text-align: right; font-size: clamp(24px, 7vw, 34px); font-weight: 700;
+  text-align: right; font-size: clamp(22px, 6.6vw, 32px); font-weight: 700;
   line-height: 1.2; min-height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 1px 1px 0 rgba(30,42,12,.18);
 }
 .tab-wrap { display: flex; margin-top: 4px; }
 .app[data-inst="gtr"] { --row: 24px; }
 .labels {
-  display: grid; grid-template-rows: repeat(var(--n, 4), var(--row)) 16px;
+  display: grid; grid-template-rows: repeat(var(--n, 4), var(--row)) 24px;
   font-weight: 700; font-size: 14px; padding-right: 6px; margin-right: 2px;
   border-right: 3px double var(--ink);
 }
 .labels span { display: flex; align-items: center; }
+.labels span[data-s] { cursor: pointer; padding: 0 3px; border-radius: 2px; }
+.labels span.on { background: var(--ink); color: var(--lcd); }
 .tab {
   display: flex; flex: 1; overflow-x: auto; scrollbar-width: none;
   scroll-padding: 0 40px;
@@ -74,99 +177,151 @@ body {
 .tab::-webkit-scrollbar { display: none; }
 .col {
   flex: 0 0 34px;
-  display: grid; grid-template-rows: repeat(var(--n, 4), var(--row)) 16px;
-  cursor: pointer; border-radius: 6px;
-  --cbg: var(--lcd);
+  display: grid; grid-template-rows: repeat(var(--n, 4), var(--row)) 24px;
+  cursor: pointer; border-radius: 2px;
+  --cbg: transparent;
   background: var(--cbg);
 }
 .col.cur { --cbg: var(--lcd-cur); }
 .col.playing { --cbg: var(--lcd-play); }
-.col.bar-end { border-right: 2px solid var(--ink); border-radius: 6px 0 0 6px; }
+.col.bar-end { border-right: 2px solid var(--ink); }
 .cell { position: relative; display: flex; align-items: center; justify-content: center; }
 .cell::before {
   content: ""; position: absolute; left: 0; right: 0; top: 50%;
-  border-top: 1px solid rgba(27, 40, 18, .55);
+  border-top: 1px solid rgba(30, 42, 12, .55);
 }
 .cell b {
-  position: relative; background: var(--cbg); padding: 0 2px;
+  position: relative; padding: 0 2px;
+  background: var(--cbg);
   font-size: 18px; line-height: 1;
 }
-.col.cur .cell.sel { outline: 2px solid var(--ink); outline-offset: -3px; border-radius: 7px; }
+.col:not(.cur):not(.playing) .cell b { background: var(--lcd); }
+.cell b.mute { font-weight: 900; }
+.col.cur .cell.sel { outline: 2px solid var(--ink); outline-offset: -3px; border-radius: 2px; }
 .cell.sel.empty::after {
-  content: ""; position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--ink);
+  content: ""; position: relative; width: 8px; height: 3px; background: var(--ink);
   animation: blink 1s steps(1) infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
-.dur {
-  font-size: 12px; font-weight: 700; text-align: center; line-height: 16px; white-space: nowrap;
-  font-family: system-ui, "Roboto", "Noto Sans", sans-serif;
-}
+/* 音価（音符・休符アイコン） */
+.dur { display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.dur svg { display: block; overflow: visible; }
+.dur.rest { opacity: .8; }
 
-/* ---------- keypad ---------- */
+/* ---------- キー / パッド ---------- */
 .keys {
-  flex: 1; min-height: 300px;
-  display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 1fr; gap: 8px;
+  flex: 1; min-height: 270px;
+  display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 1fr; gap: 9px 8px;
+  padding-bottom: 3px;
+}
+.krow {
+  grid-column: 1 / -1;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: inherit;
 }
 .keys button {
-  border: 0; border-radius: 18px; cursor: pointer;
-  background: var(--key); color: #fff;
-  font: inherit; font-size: clamp(20px, 6vw, 28px); font-weight: 500;
+  --face: var(--cream); --side: var(--cream-lo); --txt: var(--print);
+  position: relative;
+  border: 0; border-radius: 6px; cursor: pointer; padding: 0;
+  color: var(--txt);
+  background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 45%, rgba(0,0,0,.06)), var(--face);
+  box-shadow: 0 3px 0 var(--side), 0 5px 6px rgba(0,0,0,.28);
+  transform: translateY(-2px);
+  font: 700 clamp(19px, 5.6vw, 26px) var(--panel);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  line-height: 1.05; padding: 0;
-  transition: filter .08s;
+  line-height: 1.05;
+  transition: transform .05s, box-shadow .05s;
 }
-.keys button:active, .keys button.flash { filter: brightness(1.5); }
-.cap { font-size: 10px; font-weight: 400; opacity: .85; margin-top: 3px; letter-spacing: .02em; }
-.k-fn { background: var(--key-fn) !important; color: #000 !important; }
-.k-op { background: var(--key-op) !important; }
-.k-eq { background: var(--key-eq) !important; }
-.k-ac { background: var(--key-ac) !important; }
-.k-str { background: var(--key-str) !important; }
-.k-str.on { background: var(--key-str-on) !important; color: #000 !important; }
-.k-dur { background: #48484a !important; font-size: clamp(16px, 5vw, 24px) !important; }
-.k-dur.on { background: #e5e5ea !important; color: #000 !important; }
-.k-op.on { background: #fff !important; color: var(--key-op) !important; }
-.wide { grid-column: span 2; }
-.strs {
-  grid-column: span 4;
-  display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 6px;
+.keys button:active, .keys button.flash {
+  transform: translateY(1px);
+  box-shadow: 0 0 0 var(--side), 0 1px 2px rgba(0,0,0,.3);
 }
-.app[data-inst="gtr"] .strs button { border-radius: 14px; font-size: clamp(16px, 4.6vw, 24px); }
-.app[data-inst="gtr"] .strs .cap { font-size: 9px; }
-.inst { min-width: 4.8em; }
+.cap {
+  font: 700 9px var(--panel); letter-spacing: .08em; margin-top: 4px; opacity: .8;
+}
 
-/* ---------- settings ---------- */
-.field { display: block; font-size: 13px; color: #aaa; margin: 12px 0 6px; }
+/* 数字 = ゴムパッド */
+.keys button[data-k="0"], .keys button[data-k="1"], .keys button[data-k="2"], .keys button[data-k="3"],
+.keys button[data-k="4"], .keys button[data-k="5"], .keys button[data-k="6"], .keys button[data-k="7"],
+.keys button[data-k="8"], .keys button[data-k="9"] {
+  --face: var(--pad); --side: var(--pad-lo); --txt: #ece6d6;
+  border-radius: 8px;
+  background:
+    radial-gradient(120% 100% at 50% 20%, var(--pad-hi), var(--pad) 60%, #4a4742);
+  box-shadow: 0 3px 0 var(--side), 0 5px 6px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.25), inset 0 2px 2px rgba(255,255,255,.08);
+  font-size: clamp(22px, 6.4vw, 30px);
+  font-family: var(--mono);
+}
+.keys button[data-k="0"]:active, .keys button[data-k="1"]:active, .keys button[data-k="2"]:active,
+.keys button[data-k="3"]:active, .keys button[data-k="4"]:active, .keys button[data-k="5"]:active,
+.keys button[data-k="6"]:active, .keys button[data-k="7"]:active, .keys button[data-k="8"]:active,
+.keys button[data-k="9"]:active {
+  background: radial-gradient(120% 100% at 50% 30%, #77736b, var(--pad) 70%);
+}
+
+.keys .k-ac { --face: var(--red);     --side: var(--red-lo);     --txt: #fff3e6; }
+.keys .k-play { --face: var(--green);   --side: var(--green-lo);   --txt: #f3f6e8; }
+.keys .k-eq { --face: var(--mustard); --side: var(--mustard-lo); --txt: #2d2414; }
+.keys .k-op { --face: var(--gray);    --side: var(--gray-lo);    --txt: #f4efe3; }
+.keys .k-fn, .keys .k-dur { --face: var(--cream); --side: var(--cream-lo); }
+.keys .k-dur { font-size: clamp(16px, 4.8vw, 22px); }
+.keys .k-dur svg { width: clamp(20px, 6.4vw, 27px); height: auto; overflow: visible; }
+.keys .k-dur svg + .cap { margin-top: 1px; }
+.keys .k-dur[data-k="dot"] { font-size: clamp(26px, 8vw, 34px); }
+
+/* LED インジケータ（音価・付点・再生） */
+.k-dur::after, .k-play::after {
+  content: ""; position: absolute; top: 6px; right: 7px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #5a2a20; box-shadow: inset 0 1px 1px rgba(0,0,0,.5);
+}
+.k-dur.on::after, .k-play.on::after {
+  background: radial-gradient(circle at 35% 35%, #ffd2b8, var(--led) 60%);
+  box-shadow: 0 0 6px 1px var(--led), 0 0 2px var(--led);
+}
+.k-play.on::after { background: radial-gradient(circle at 35% 35%, #e9ffd0, #7dff3a 60%); box-shadow: 0 0 6px 1px #7dff3a; }
+
+/* ---------- ダイアログ（筐体パネル風） ---------- */
+dialog {
+  background: linear-gradient(180deg, var(--body-hi), var(--body));
+  color: var(--print);
+  border: 0; border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--body-lo), 0 20px 50px rgba(0,0,0,.6);
+  max-width: min(440px, calc(100vw - 32px)); padding: 16px 20px; line-height: 1.6;
+}
+dialog::backdrop { background: rgba(20,18,15,.65); }
+dialog h2 {
+  margin: 0 0 8px; font: 900 italic 17px var(--panel); letter-spacing: .04em;
+  border-bottom: 2px solid var(--print); padding-bottom: 4px;
+}
+dialog ol { padding-left: 1.2em; margin: 0; font-size: 14px; }
+dialog .kbd { font-size: 12px; color: #5d574b; }
+dialog button {
+  background: linear-gradient(var(--mustard), #cf9530); color: #2d2414; border: 0; border-radius: 4px;
+  box-shadow: 0 3px 0 var(--mustard-lo);
+  padding: 7px 18px; font: 700 15px var(--panel); float: right; cursor: pointer;
+}
+dialog button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--mustard-lo); }
+.field { display: block; font: 700 12px var(--panel); color: #5d574b; margin: 12px 0 6px; letter-spacing: .04em; }
 .field select { display: block; width: 100%; margin-top: 4px; }
 dialog select {
-  background: #2c2c2e; color: #fff; border: 1px solid #48484a; border-radius: 8px;
-  padding: 6px 8px; font-size: 15px;
+  background: #1d1c1a; color: #ffb347; border: 0; border-radius: 3px;
+  box-shadow: inset 0 2px 3px rgba(0,0,0,.7);
+  padding: 6px 8px; font-size: 15px; font-family: var(--mono);
 }
-.tune-rows { display: grid; gap: 6px; }
+.tune-rows { display: grid; gap: 8px; }
 .trow { display: grid; grid-template-columns: 3em 40px 1fr 40px; gap: 6px; align-items: center; }
-.trow .sname { font-size: 14px; color: #ddd; }
-.trow select { text-align: center; font-family: ui-monospace, Consolas, monospace; }
+.trow .sname { font: 700 14px var(--panel); }
+.trow select { text-align: center; }
 dialog .trow button {
-  float: none; padding: 6px 0; background: #3a3a3c; font-size: 18px;
+  float: none; padding: 5px 0; font-size: 18px;
+  background: linear-gradient(var(--cream), #dcd3bd); box-shadow: 0 3px 0 var(--cream-lo);
 }
 dialog form { margin-top: 14px; overflow: hidden; }
 
-/* ---------- help ---------- */
-dialog {
-  background: #1c1c1e; color: #eee; border: 1px solid #3a3a3c; border-radius: 16px;
-  max-width: min(440px, calc(100vw - 32px)); padding: 16px 20px; line-height: 1.6;
-}
-dialog::backdrop { background: rgba(0,0,0,.6); }
-dialog h2 { margin: 0 0 8px; font-size: 18px; }
-dialog ol { padding-left: 1.2em; margin: 0; font-size: 14px; }
-dialog .kbd { font-size: 12px; color: #aaa; }
-dialog button {
-  background: var(--key-op); color: #fff; border: 0; border-radius: 10px;
-  padding: 8px 18px; font-size: 15px; float: right; cursor: pointer;
-}
-
-@media (max-height: 640px) {
+@media (max-height: 680px) {
   :root { --row: 24px; }
+  .app[data-inst="gtr"] { --row: 20px; }
   .readout { font-size: 22px; }
-  .keys { gap: 6px; min-height: 260px; }
+  .keys { gap: 7px 6px; min-height: 240px; }
+  .plate { height: 14px; margin-bottom: 3px; }
 }
