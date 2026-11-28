@@ -70,6 +70,7 @@ const el = {
   keys: $('keys'), title: $('title'), tempo: $('tempo'),
   inst: $('inst'), settings: $('settings'), setDlg: $('setDlg'), setTitle: $('setTitle'),
   preset: $('preset'), tuneRows: $('tuneRows'), program: $('program'),
+  tsNum: $('tsNum'), tsDen: $('tsDen'), tsPresets: $('tsPresets'),
   playKey: $('playKey'), help: $('help'), helpDlg: $('helpDlg'),
 };
 
@@ -90,10 +91,18 @@ if (Object.values(el).some((x) => !x)) {
  * S = { inst: 'uke'|'gtr', songs: { uke: Song, gtr: Song } }  楽器ごとに別の譜面を保持
  */
 const newStep = (n, d) => ({ f: Array(n).fill(null), d, dot: false });
+/* 拍子 ts = [分子, 分母]。分子 1〜16、分母 2/4/8/16 */
+const TS_NUMS = Array.from({ length: 16 }, (_, i) => i + 1);
+const TS_DENS = [2, 4, 8, 16];
+const TS_PRESETS = [[2, 4], [3, 4], [4, 4], [5, 4], [6, 8], [7, 8], [9, 8], [12, 8]];
+function validTs(ts) {
+  return Array.isArray(ts) && TS_NUMS.includes(ts[0]) && TS_DENS.includes(ts[1]);
+}
+
 function newSong(inst) {
   const I = INSTRUMENTS[inst];
   const tuning = [...I.presets[0].notes];
-  return { steps: [newStep(tuning.length, 4)], cur: 0, str: 0, dur: 4, tempo: 100, title: I.title, tuning, program: I.program };
+  return { steps: [newStep(tuning.length, 4)], cur: 0, str: 0, dur: 4, tempo: 100, title: I.title, tuning, program: I.program, ts: [4, 4] };
 }
 const fresh = () => ({ inst: 'uke', songs: { uke: newSong('uke'), gtr: newSong('gtr') } });
 
@@ -128,6 +137,7 @@ function load() {
     song.steps.forEach((st) => { st.f = Array.from({ length: n }, (_, i) => (st.f && st.f[i] != null ? st.f[i] : null)); });
     song.cur = Math.min(Math.max(0, song.cur | 0), song.steps.length - 1);
     song.str = Math.min(Math.max(0, song.str | 0), n - 1);
+    if (!validTs(song.ts)) song.ts = [4, 4];
   }
   return s;
 }
@@ -145,7 +155,9 @@ const isMute = (v) => v === MUTE;
 const midiOf = (si, fret) => D().tuning[si] + (isMute(fret) ? 0 : fret);
 const noteName = (m) => NOTE[m % 12] + (Math.floor(m / 12) - 1);
 const pc = (m) => NOTE[m % 12];
-const beatsOf = (st) => (4 / st.d) * (st.dot ? 1.5 : 1);
+const beatsOf = (st) => (4 / st.d) * (st.dot ? 1.5 : 1);   // 4分音符 = 1
+const barLen = () => D().ts[0] * (4 / D().ts[1]);           // 1小節の長さ（4分音符単位）
+const beatUnit = () => 4 / D().ts[1];                       // 1拍の長さ（4分音符単位）
 const isRest = (st) => st.f.every((x) => x == null);
 const uniqSorted = (arr) => [...new Set(arr)].sort((a, b) => a - b);
 /* 実音（ミュート以外）の MIDI ノート */
@@ -255,13 +267,14 @@ function render() {
 
   // TAB
   const frag = document.createDocumentFragment();
+  const bl = barLen();
   let beats = 0;
   d.steps.forEach((st, i) => {
     beats += beatsOf(st);
     const col = document.createElement('div');
     col.className = 'col';
     if (i === d.cur) col.classList.add('cur');
-    if (Math.abs(beats / 4 - Math.round(beats / 4)) < 1e-6) col.classList.add('bar-end');
+    if (Math.abs(beats / bl - Math.round(beats / bl)) < 1e-6) col.classList.add('bar-end');
     col.dataset.i = i;
     for (let s = 0; s < n; s++) {
       const c = document.createElement('div');
@@ -288,9 +301,9 @@ function render() {
   // ステータス
   let startBeats = 0;
   for (let i = 0; i < d.cur; i++) startBeats += beatsOf(d.steps[i]);
-  const bar = Math.floor(startBeats / 4 + 1e-6) + 1;
-  const beat = +(startBeats % 4 + 1).toFixed(2);
-  el.info.textContent = `${tuningName()}  ♩=${d.tempo}`;
+  const bar = Math.floor(startBeats / bl + 1e-6) + 1;
+  const beat = +(Math.max(0, startBeats - (bar - 1) * bl) / beatUnit() + 1).toFixed(2);
+  el.info.textContent = `${tuningName()}  ${d.ts[0]}/${d.ts[1]}  ♩=${d.tempo}`;
   el.pos.textContent = `${d.cur + 1}/${d.steps.length}  小節${bar} 拍${beat}`;
 
   const st = cur();
@@ -361,7 +374,34 @@ function renderSettings() {
 
   el.program.replaceChildren(...PROGRAMS.map(([p, name]) => new Option(`${name} (GM ${p + 1})`, p)));
   el.program.value = d.program;
+
+  // 拍子
+  el.tsNum.replaceChildren(...TS_NUMS.map((n) => new Option(n, n)));
+  el.tsDen.replaceChildren(...TS_DENS.map((n) => new Option(n, n)));
+  el.tsNum.value = d.ts[0];
+  el.tsDen.value = d.ts[1];
+  el.tsPresets.replaceChildren(...TS_PRESETS.map(([n, dd]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = `${n}/${dd}`;
+    b.dataset.ts = `${n}/${dd}`;
+    if (n === d.ts[0] && dd === d.ts[1]) b.className = 'on';
+    return b;
+  }));
 }
+
+function setTs(n, dd) {
+  if (!validTs([n, dd])) return;
+  D().ts = [n, dd];
+  commit();
+  renderSettings();
+}
+el.tsNum.addEventListener('change', () => setTs(+el.tsNum.value, D().ts[1]));
+el.tsDen.addEventListener('change', () => setTs(D().ts[0], +el.tsDen.value));
+el.tsPresets.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-ts]');
+  if (b) { const [n, dd] = b.dataset.ts.split('/').map(Number); setTs(n, dd); }
+});
 
 function setTuning(i, v) {
   D().tuning[i] = Math.min(TUNE_MAX, Math.max(TUNE_MIN, v));
@@ -526,7 +566,10 @@ function buildMidi() {
   push(0, 0xff, 0x03, ...vlq(name.length), ...name);
   const uspq = Math.round(60000000 / d.tempo);
   push(0, 0xff, 0x51, 0x03, (uspq >> 16) & 255, (uspq >> 8) & 255, uspq & 255);
-  push(0, 0xff, 0x58, 0x04, 4, 2, 24, 8);
+  // 拍子: 分母は2のべき乗の指数、メトロノーム間隔は複合拍子(6/8・9/8・12/8)なら付点4分=36クロック
+  const [tsN, tsD] = d.ts;
+  const compound = tsD === 8 && tsN % 3 === 0 && tsN > 3;
+  push(0, 0xff, 0x58, 0x04, tsN, Math.log2(tsD), compound ? 36 : 96 / tsD, 8);
   push(0, 0xc0, d.program & 0x7f);
 
   // 絶対時刻でノートを集め、時刻順（同時刻は Note Off 優先）に並べてから書き出す

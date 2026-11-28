@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <div class="app">
@@ -20,7 +20,7 @@
     <input id="title" aria-label="曲名" placeholder="曲名" maxlength="40">
     <label class="tempo">♩=<input id="tempo" type="number" inputmode="numeric" min="30" max="300" aria-label="テンポ"></label>
     <button id="inst" class="toggle inst" type="button" title="ウクレレ／ギター切替">ウクレレ</button>
-    <button id="settings" class="toggle" type="button" aria-label="チューニング設定" title="チューニング・音色">⚙</button>
+    <button id="settings" class="toggle" type="button" aria-label="設定" title="拍子・チューニング・音色">⚙</button>
     <button id="help" class="toggle" type="button" aria-label="使い方">?</button>
   </header>
 
@@ -92,7 +92,7 @@
 <dialog id="helpDlg">
   <h2>使い方</h2>
   <ol>
-    <li>右上のボタンで<b>ウクレレ／ギター</b>を切替（譜面は楽器ごとに別々に保存）。<b>⚙</b> で弦ごとのチューニングと音色を設定。</li>
+    <li>右上のボタンで<b>ウクレレ／ギター</b>を切替（譜面は楽器ごとに別々に保存）。<b>⚙</b> で<b>拍子</b>・弦ごとのチューニング・音色を設定。</li>
     <li><b>↑ ↓</b> で弦を選び（TABや左の弦名をタップしても選べます）、<b>数字</b>でフレットを入力（2桁は続けて押す：1→2 で 12）。</li>
     <li>同じ列で別の弦を選んで数字を押すと<b>和音</b>になります。</li>
     <li><b>→</b> で次の列へ（最後の列なら新しい列を追加）。<b>列挿入</b>で今の列の後ろに空の列を追加。何も入っていない列は<b>休符</b>になります。</li>
@@ -102,13 +102,20 @@
     <li><b>AC</b> を押すと点滅します。3秒以内にもう一度押すと全削除（他のキーで取り消し）。</li>
   </ol>
   <p class="kbd">キーボード: 数字 / ←→ 列移動 / ↑↓ 弦 / Enter 列挿入 / Backspace 列削除 / Delete 弦クリア / X ミュート / Space 再生 / . 付点</p>
-  <p class="kbd">バージョン 11</p>
+  <p class="kbd">バージョン 13</p>
   <form method="dialog"><button>閉じる</button></form>
 </dialog>
 
 <dialog id="setDlg">
   <h2 id="setTitle">設定</h2>
-  <label class="field">プリセット
+  <div class="field">拍子</div>
+  <div class="ts-row">
+    <select id="tsNum" aria-label="拍子の分子"></select>
+    <span class="ts-slash">/</span>
+    <select id="tsDen" aria-label="拍子の分母"></select>
+  </div>
+  <div class="ts-presets" id="tsPresets"></div>
+  <label class="field">チューニング・プリセット
     <select id="preset"></select>
   </label>
   <div class="field">弦ごとのチューニング（上が1弦）</div>
@@ -119,6 +126,6 @@
   <form method="dialog"><button>閉じる</button></form>
 </dialog>
 
-<script src="app.js?v=11"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>
